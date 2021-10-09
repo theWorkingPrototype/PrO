@@ -4,14 +4,30 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <title>PrO</title>
     <style>
-        
+        .btn{
+            border-radius: 2px;
+            position: absolute;
+            width:14px;
+            height:18px;
+            bottom:5px;
+            left:5px;
+            padding:12px 36px;
+        }
+        .playbtn{
+            background-color: aqua;
+        }
+        .pausebtn{
+            background-color: aquamarine;
+        }
     </style>
 </head>
 <body style="margin:0px">
     <div style="position:absolute;width: 100vw;height:100vh;z-index:-1;background-color:black"></div>
     <canvas></canvas>
+    <div class="btn playbtn" onclick="btnClick(this)"><i class="fa fa-play"></i></div>
     <script src="animate.js"></script>
     <script src="procedure.js"></script>
     <script src="interact.js"></script>
