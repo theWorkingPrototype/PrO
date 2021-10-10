@@ -1,64 +1,56 @@
-// let t0 = performance.now();
 var canvas = document.getElementsByTagName("canvas")[0];
-// document.body.appendChild(canvas);
-var width = innerWidth - 20;
-var height = innerHeight - 30;
+var width = innerWidth;
+var height = innerHeight - 10; // to fit in screen size without sroll bars
 var ctx = canvas.getContext("2d");
-// class vertex{
-//     x: number;
-//     y: number;
-//     isFixed: boolean;
-//     prevX: number;
-//     prevY: number;
-// }
-// let a= new vertex();
+canvas.width = width;
+canvas.height = height;
 ctx.fillStyle = "#51ff0d";
 ctx.strokeStyle = "blue";
-function changeNumberOfVertices() {
-    //
-}
-var numberOfFixedVertices = 0;
-var totalNumberOfVertices = 0;
+var rodElasticity = 0; // % of allowed stretch
+var ropeElasticity = 5;
+var Vertex = /** @class */ (function () {
+    function Vertex(x, y, weight, isFixed) {
+        if (weight === void 0) { weight = defaultWeightOfVertex; }
+        if (isFixed === void 0) { isFixed = false; }
+        this.x = x;
+        this.y = y;
+        this.prevX = x;
+        this.prevY = y;
+        this.weight = weight;
+        this.isFixed = isFixed;
+        this.isSelected = false;
+    }
+    return Vertex;
+}());
+var Edge = /** @class */ (function () {
+    function Edge(vertexA, vertexB, length, elasticity) {
+        if (length === void 0) { length = 0; }
+        if (elasticity === void 0) { elasticity = defaultElasticity; }
+        this.vertexA = vertexA;
+        this.vertexB = vertexB;
+        this.distance = Math.sqrt(Math.pow(vertexA.x - vertexB.x, 2) + Math.pow(vertexA.y - vertexB.y, 2));
+        if (!length)
+            this.length = this.distance;
+        else
+            this.length = length;
+        this.elasticity = elasticity;
+    }
+    return Edge;
+}());
+// let a= new Vertex();
 // let numberOfVerticesPerLine = totalNumberOfVertices / numberOfFixedVertices==0?1:;
 var vertices = [];
 var edges = [];
 //defaults
 var defaultRadius = 10;
-var defaultEdgeStrength = 1; // width and elasticity 1 for 10% of length can be stretched
+var defaultElasticity = 0; // width and elasticity 1 for 10% of length can be stretched
 var defaultWeightOfVertex = 1; // 1 what? apples?? door hinges per elon musk??
-var minSeperation = 20; // for visibility
-// addVertex(width / 2 - Math.random() + .5, height / 2, true);
-// addVertex(width / 2, height / 3, false);
-// addVertex(width / 2, 0, false);
-// addVertex(4 * width / 6, height / 4, false);
-// addVertex(5 * width / 6, height / 4, false);
-(function start() {
-    // let i = 0;
-    // let leftOffset = 200;
-    // let topOffset = 50;
-    // let seperationX = (width - 2 * leftOffset) / (numberOfFixedVertices - 1);
-    // if (seperationX < 20) seperationX = minSeperation;
-    // let seperationY = (height - topOffset) / (totalNumberOfVertices / numberOfFixedVertices);
-    // if (seperationY < 20) seperationY = minSeperation;
-    // for (i = 0; i < numberOfFixedVertices; i++) {
-    //     let j = 0;
-    //     addVertex(leftOffset + i * seperationX, topOffset + j * seperationY, true);
-    //     for (j = 0; j < totalNumberOfVertices / numberOfFixedVertices; j++) {
-    //         addVertex(leftOffset + i * seperationX, topOffset + j * seperationY);
-    //         if (height < topOffset + j * seperationY) height = topOffset + j * seperationY;
-    //     }
-    // }
-    width += 20;
-    height += 20;
-    canvas.width = width;
-    canvas.height = height;
-})();
-// generateEdges(vertices);
-drawEdges(edges);
-drawVertices(vertices);
-function addVertex(x, y, fixed) {
-    if (fixed === void 0) { fixed = false; }
-    vertices.push([x, y, fixed, x, y, false]);
+// drawEdges(edges);
+// drawVertices(vertices);
+function addVertex(x, y, weigth, isFixed) {
+    if (weigth === void 0) { weigth = defaultWeightOfVertex; }
+    if (isFixed === void 0) { isFixed = false; }
+    vertices.push(new Vertex(x, y, weigth, isFixed));
 }
 function drawVertex(x, y, radius) {
     if (radius === void 0) { radius = defaultRadius; }
@@ -67,43 +59,23 @@ function drawVertex(x, y, radius) {
     ctx.fill();
     ctx.stroke();
 }
-function isFixed(vertex) {
-    return vertex[2] == 1;
-}
 function drawVertices(vertices) {
     ctx.strokeStyle = "#AAAAAA";
     ctx.lineWidth = 2;
     var i = 0;
     for (i = 0; i < vertices.length; i++) {
         ctx.fillStyle = "#c8362e";
-        if (vertices[i][5] == true)
+        if (vertices[i].isSelected)
             ctx.fillStyle = "#FF885e";
-        if (vertices[i][2] == true)
+        if (vertices[i].isFixed)
             ctx.fillStyle = "gray";
-        drawVertex(vertices[i][0], vertices[i][1]);
+        drawVertex(vertices[i].x, vertices[i].y);
     }
 }
-// function generateEdges(vertices: Array<any>) {
-//     let prevVertices = [];
-//     for (let i = 0; i < numberOfFixedVertices; i++) {
-//         prevVertices.shift();
-//         prevVertices.push(vertices[i * numberOfVerticesPerLine]);
-//         for (let j = 1; j < numberOfVerticesPerLine; j++) {
-//             let currentVertex = vertices[i * numberOfVerticesPerLine + j];
-//             if (prevVertices.length >= numberOfVerticesPerLine) {
-//                 makeEdgeBetween(prevVertices.shift(), currentVertex);
-//             }
-//             makeEdgeBetween(prevVertices[prevVertices.length - 1], currentVertex);
-//             prevVertices.push(currentVertex);
-//         }
-//     }
-// }
-function makeEdgeBetween(vertexA, vertexB, edgeStrength) {
-    if (edgeStrength === void 0) { edgeStrength = defaultEdgeStrength; }
-    var edgeLength = (vertexA[0] - vertexB[0]) * (vertexA[0] - vertexB[0]);
-    edgeLength += (vertexA[1] - vertexB[1]) * (vertexA[1] - vertexB[1]);
-    edgeLength = Math.sqrt(edgeLength);
-    edges.push([vertexA, vertexB, edgeLength]);
+function makeEdgeBetween(vertexA, vertexB, length, elasticity) {
+    if (length === void 0) { length = 0; }
+    if (elasticity === void 0) { elasticity = defaultElasticity; }
+    edges.push(new Edge(vertexA, vertexB, length, elasticity));
 }
 function drawEdges(edges) {
     ctx.fillStyle = "#ACD3DE";
@@ -111,20 +83,31 @@ function drawEdges(edges) {
     ctx.lineWidth = 3;
     for (var i = 0; i < edges.length; i++) {
         ctx.beginPath();
-        ctx.moveTo(edges[i][1][0], edges[i][1][1]);
-        ctx.lineTo(edges[i][0][0], edges[i][0][1]);
+        ctx.moveTo(edges[i].vertexA.x, edges[i].vertexA.y);
+        ctx.lineTo(edges[i].vertexB.x, edges[i].vertexB.y);
         ctx.stroke();
     }
 }
 function deleteEdgeContaining(vertex) {
     for (var i = 0; i < edges.length; i++) {
         var edge = edges[i];
-        if (edge[0] == vertex || edge[1] == vertex) {
+        if (edge.vertexA == vertex || edge.vertexB == vertex) {
             edges.splice(i, 1);
             i--;
         }
     }
 }
-console.log("    ^~^");
+function findVertex(x, y) {
+    if (!vertices)
+        return null;
+    for (var i = 0; i < vertices.length; i++) {
+        var vertex = vertices[i];
+        // console.log(vertex[0], vertex[1], x, y, defaultRadius);
+        if (vertex.x >= x - defaultRadius && vertex.x <= x + defaultRadius && vertex.y >= y - defaultRadius && vertex.y <= y + defaultRadius)
+            return vertex;
+    }
+    return null;
+}
+console.log("%c    ^~^","color:orange");
 console.log("  oRaNge");
 // console.log(performance.now() - t0);
