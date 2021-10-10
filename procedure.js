@@ -1,9 +1,11 @@
-var frameRate = 30;
-var gravity = 10;
-var verticesPrevFrame = [];
+var frameRate = 2000;
+var gravity = 10 / .02; // = 500 pixels/ second ^ 2  (approximating 50 pixels to 1 m)
+// 10 is in m/s^2 very slow for 1000m(pixelss) so increasing it while maintaining relatable display
 var dt = 1 / frameRate; // in seconds
-var numberOfEdgeUpdates = 7500;
+var maxNumberOfEdgeUpdates = 1000;
+var totalMinimumAllowedLengthError = 1e-10;
 var num = 0;
+var canSlack = false;
 function play() {
     if (num != 0) {
         console.error("AlreadyPlaying");
@@ -11,65 +13,72 @@ function play() {
     }
     num = setInterval(function () {
         ctx.clearRect(0, 0, width + 20, height + 20);
+        updateFrame(vertices, edges);
         drawEdges(edges);
         drawVertices(vertices);
-        updateFrame(vertices, edges);
-    }, 1);
-    // }, 1000 / frameRate);
+    }, 1000 / frameRate);
 }
 function pause() {
-    clearInterval(num);
+    if (num)
+        clearInterval(num);
     num = 0;
 }
+var changes = 0;
 function updateFrame(vertices, edges) {
     updateVertices(vertices);
-    var k = numberOfEdgeUpdates;
-    for (var i = 0; i < k; i++) {
+    var i = 0;
+    for (i = 0; i < maxNumberOfEdgeUpdates; i++) {
+        changes = 0;
         updateEdges(edges);
+        if (Math.abs(changes) <= totalMinimumAllowedLengthError)
+            break;
     }
+    if (i == maxNumberOfEdgeUpdates)
+        console.log("PerformancePeak");
 }
 function updateVertices(vertices) {
+    dt = 10 / frameRate;
     for (var i = 0; i < vertices.length; i++) {
         var vertex = vertices[i];
-        if (!isFixed(vertex)) {
-            // console.log(vertex);
-            var newx = vertex[0], newy = vertex[1];
-            newx += (vertex[0] - vertex[3]);
-            newy += (vertex[1] - vertex[4]);
-            newy += gravity * dt * dt;
-            vertex[3] = vertex[0];
-            vertex[4] = vertex[1];
-            if (newx > 2 * width || newy > 2 * height || newx < -width || newy < -height) {
+        if (!vertex.isFixed) {
+            var newx = vertex.x, newy = vertex.y;
+            newx += (vertex.x - vertex.prevX);
+            newy += (vertex.y - vertex.prevY);
+            newy += 0.5 * gravity * dt * dt;
+            vertex.prevX = vertex.x;
+            vertex.prevY = vertex.y;
+            if (newx > 2 * Math.max(height, width) || newy > 2 * Math.max(height, width) || newx < -Math.max(height, width) || newy < -Math.max(height, width)) {
                 deleteEdgeContaining(vertex);
                 vertices.splice(i, 1);
                 i--;
             }
-            vertex[0] = newx;
-            vertex[1] = newy;
-            // console.log(vertex);
+            vertex.x = newx;
+            vertex.y = newy;
         }
     }
 }
 function updateEdges(edges) {
-    edges.forEach(function (edge) {
-        var edgeCenterX, edgeCenterY;
-        var edgeDirX, edgeDirY;
-        var edgeLength = edge[2];
-        edgeCenterX = (edge[0][0] + edge[1][0]) / 2;
-        edgeCenterY = (edge[0][1] + edge[1][1]) / 2;
-        edgeDirX = edge[0][0] - edge[1][0];
-        edgeDirY = edge[0][1] - edge[1][1];
-        var N = edgeDirX * edgeDirX + edgeDirY * edgeDirY;
-        N = Math.sqrt(N);
-        edgeDirX /= N;
-        edgeDirY /= N;
-        if (edge[0][2] == 0) {
-            edge[0][0] = edgeCenterX + edgeDirX * edgeLength / 2;
-            edge[0][1] = edgeCenterY + edgeDirY * edgeLength / 2;
+    for (var i = 0; i < edges.length; i++) {
+        var edge = edges[i];
+        var edgeCenterX = (edge.vertexA.x + edge.vertexB.x) / 2;
+        var edgeCenterY = (edge.vertexA.y + edge.vertexB.y) / 2;
+        var edgeDirX = edge.vertexA.x - edge.vertexB.x; // edgeDir is directional from B to A
+        var edgeDirY = edge.vertexA.y - edge.vertexB.y; // so we add length/2 from mid to get A
+        var N = Math.sqrt(edgeDirX * edgeDirX + edgeDirY * edgeDirY);
+        var deltaL = N - edge.length;
+        if (canSlack && deltaL < 0)
+            continue;
+        changes += deltaL;
+        edgeDirX /= N; // if a vertex is fixed then u would think we are pushing all error to open vertex 
+        edgeDirY /= N; // and yes we are but by doing this multiple times we fix that
+        // we can add condition to check if only one of them is free but itll just slow down cause we have to do multiple times anyways
+        if (!edge.vertexA.isFixed) {
+            edge.vertexA.x = edgeCenterX + edgeDirX * edge.length / 2;
+            edge.vertexA.y = edgeCenterY + edgeDirY * edge.length / 2;
         }
-        if (edge[1][2] == 0) {
-            edge[1][0] = edgeCenterX - edgeDirX * edgeLength / 2;
-            edge[1][1] = edgeCenterY - edgeDirY * edgeLength / 2;
+        if (!edge.vertexB.isFixed) {
+            edge.vertexB.x = edgeCenterX - edgeDirX * edge.length / 2;
+            edge.vertexB.y = edgeCenterY - edgeDirY * edge.length / 2;
         }
-    });
+    }
 }
