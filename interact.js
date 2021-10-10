@@ -1,46 +1,57 @@
-var activeVertex = [];
+var activeVertex;
+var windVelocityX = 0;
+var windVelocityY = 0;
 canvas.addEventListener("mousedown", function (ev) {
     // console.log(ev.pageX - canvas.offsetLeft, ev.pageY - canvas.offsetTop)
     var clickedVertex = findVertex(ev.pageX - canvas.offsetLeft, ev.pageY - canvas.offsetTop);
     // console.log(clickedVertex);
-    if (clickedVertex.length > 0) {
-        clickedVertex[5] = true;
-        if (activeVertex.length == 0) {
+    if (clickedVertex) {
+        clickedVertex.isSelected = true;
+        if (!activeVertex) {
             activeVertex = clickedVertex;
         }
         else if (activeVertex == clickedVertex) {
-            clickedVertex[2] = !clickedVertex[2];
-            activeVertex = [];
+            clickedVertex.isFixed = !clickedVertex.isFixed;
+            activeVertex = null;
         }
         else {
             makeEdgeBetween(activeVertex, clickedVertex);
-            activeVertex[5] = clickedVertex[5] = false;
-            activeVertex = [];
+            activeVertex.isSelected = clickedVertex.isSelected = false;
+            activeVertex = null;
         }
     }
     else {
-        addVertex(ev.pageX - canvas.offsetLeft, ev.pageY - canvas.offsetTop, false);
-        totalNumberOfVertices++;
+        if (activeVertex) {
+            activeVertex.isSelected = false;
+            activeVertex = null;
+        }
+        addVertex(ev.pageX - canvas.offsetLeft, ev.pageY - canvas.offsetTop);
     }
     ctx.clearRect(0, 0, width, height);
     drawEdges(edges);
     drawVertices(vertices);
+    maxNumberOfEdgeUpdates = 50 * edges.length + 1;
+    if (maxNumberOfEdgeUpdates > 1000)
+        maxNumberOfEdgeUpdates = 1000;
 });
 document.addEventListener("keydown", function (kev) {
     // console.log(kev.key)
     if (kev.key == " ") {
-        if (num == 0)
-            play();
-        else
-            pause();
+        btnClick();
     }
 });
-function findVertex(x, y) {
-    for (var i = 0; i < vertices.length; i++) {
-        var vertex = vertices[i];
-        // console.log(vertex[0], vertex[1], x, y, defaultRadius);
-        if (vertex[0] >= x - defaultRadius && vertex[0] <= x + defaultRadius && vertex[1] >= y - defaultRadius && vertex[1] <= y + defaultRadius)
-            return vertex;
+var btn = document.getElementsByClassName("btn")[0];
+function btnClick() {
+    if (num) {
+        pause();
+        btn.classList.remove("pausebtn");
+        btn.classList.add("playbtn");
+        btn.innerHTML = "<i class=\"fa fa-play\"></i>";
     }
-    return [];
+    else {
+        play();
+        btn.classList.remove("playbtn");
+        btn.classList.add("pausebtn");
+        btn.innerHTML = "<i class=\"fa fa-pause\"></i>";
+    }
 }
