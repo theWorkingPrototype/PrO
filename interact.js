@@ -42,7 +42,7 @@ document.addEventListener("keydown", function (kev) {
 });
 var btn = document.getElementsByClassName("btn")[0];
 function btnClick() {
-    if (num) {
+    if (running) {
         pause();
         btn.classList.remove("pausebtn");
         btn.classList.add("playbtn");

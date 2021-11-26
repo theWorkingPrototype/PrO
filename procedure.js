@@ -1,27 +1,31 @@
-var frameRate = 2000;
-var gravity = 10 / .02; // = 500 pixels/ second ^ 2  (approximating 50 pixels to 1 m)
+
+var gravity = 9.8; // = 500 pixels/ second ^ 2  (approximating 50 pixels to 1 m)
 // 10 is in m/s^2 very slow for 1000m(pixelss) so increasing it while maintaining relatable display
-var dt = 1 / frameRate; // in seconds
-var maxNumberOfEdgeUpdates = 1000;
+var dt = 1/10; // in seconds
+var maxNumberOfEdgeUpdates = 30;
 var totalMinimumAllowedLengthError = 1e-10;
-var num = 0;
+var running = 0;
 var canSlack = false;
+
+function update(){
+    if(running)window.requestAnimationFrame(update);
+    ctx.clearRect(0, 0, width + 20, height + 20);
+    updateFrame(vertices, edges);
+    drawEdges(edges);
+    drawVertices(vertices);
+}
+
 function play() {
-    if (num != 0) {
+    if (running != 0) {
         console.error("AlreadyPlaying");
         return;
     }
-    num = setInterval(function () {
-        ctx.clearRect(0, 0, width + 20, height + 20);
-        updateFrame(vertices, edges);
-        drawEdges(edges);
-        drawVertices(vertices);
-    }, 1000 / frameRate);
+    running=1;
+    window.requestAnimationFrame(update);
 }
 function pause() {
-    if (num)
-        clearInterval(num);
-    num = 0;
+    if (running)
+        running = 0;
 }
 var changes = 0;
 function updateFrame(vertices, edges) {
@@ -37,7 +41,6 @@ function updateFrame(vertices, edges) {
         console.log("PerformancePeak");
 }
 function updateVertices(vertices) {
-    dt = 10 / frameRate;
     for (var i = 0; i < vertices.length; i++) {
         var vertex = vertices[i];
         if (!vertex.isFixed) {
