@@ -1,11 +1,11 @@
 Procedural animation uses IK for very fast gravity simulations.
 
 
-click to create a point.
+ -> Click to create a point.
 
-click two points consecutively to join them.
+ -> Click two points consecutively to join them.
 
-click a point twice to fix it.
+ -> Click a point twice to fix it.
 
 hit space to play/ pause gravity.
 
